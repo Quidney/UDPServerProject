@@ -1,7 +1,5 @@
-﻿using System.Diagnostics;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using UDPServerLibrary.Model;
 
 namespace UDPServerLibrary
@@ -9,7 +7,8 @@ namespace UDPServerLibrary
     public class UdpListener : IListener, IDisposable
     {
         public bool IsListening { get; private set; }
-        public event Action<IPEndPoint, string>? MessageReceived;
+        public event Action<IPEndPoint, byte[]>? MessageReceived;
+        public event Action<IPEndPoint, string>? MessageReceivedBase64String;
 
         private CancellationTokenSource? _cts;
         private readonly IEncoder _encoder;
@@ -44,8 +43,9 @@ namespace UDPServerLibrary
                 try
                 {
                     UdpReceiveResult result = await _client.ReceiveAsync(_cts.Token);
-                    string message = _encoder.BytesToString(result.Buffer);
-                    MessageReceived?.Invoke(result.RemoteEndPoint, message);
+
+                    MessageReceived?.Invoke(result.RemoteEndPoint, result.Buffer);
+                    MessageReceivedBase64String?.Invoke(result.RemoteEndPoint, _encoder.BytesToString(result.Buffer));
                 }
                 catch (SocketException ex)
                 {

@@ -6,7 +6,7 @@ namespace UDPTesterConsole
 {
     public class UdpNode
     {
-        public event Action<IPEndPoint, string>? MessageReceived
+        public event Action<IPEndPoint, byte[]>? MessageReceived
         {
             add => Listener.MessageReceived += value;
             remove => Listener.MessageReceived -= value;

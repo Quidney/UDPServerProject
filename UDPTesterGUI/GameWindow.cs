@@ -12,6 +12,8 @@ namespace UDPTesterGUI
         IPEndPoint ServerEP = new(IPAddress.Loopback, 23345);
         UdpNode Client = null!;
         Color backgroundColor = Color.Black;
+        IEncoder Encoder;
+
 
         int receivedPackages = 0;
 
@@ -19,14 +21,15 @@ namespace UDPTesterGUI
         {
             InitializeComponent();
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
+            Encoder = new Encoder(System.Text.Encoding.UTF8);
         }
 
         protected override async void OnShown(EventArgs e)
         {
             base.OnShown(e);
 
-            IEncoder encoder = new Encoder(System.Text.Encoding.UTF8);
-            Client = new(encoder);
+            
+            Client = new(Encoder);
             Client.MessageReceived += Client_MessageReceived;
 
             Package pkg = new(Command.CONNECT, "23346");
@@ -36,13 +39,15 @@ namespace UDPTesterGUI
             _ = Task.Run(() => Client.StartListening(23346));
         }
 
-        private void Client_MessageReceived(IPEndPoint sender, string message)
+        private void Client_MessageReceived(IPEndPoint sender, byte[] message)
         {
             Debug.WriteLine(message);
 
             receivedPackages++;
 
-            Color color = Color.FromName(message);
+            string dataJson = Encoder.BytesToString(message);
+
+            Color color = Color.FromName(dataJson);
             backgroundColor = color;
             Refresh();
         }

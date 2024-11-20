@@ -4,6 +4,7 @@ namespace UDPServerLibrary.Model
 {
     internal interface IMessageSender
     {
-        Task SendMessage(IPEndPoint destination, string message);
+        IEncoder Encoder { get; }
+        Task SendMessage(IPEndPoint destination, string message, CancellationToken token = default);
     }
 }

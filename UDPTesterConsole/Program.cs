@@ -22,12 +22,13 @@ namespace UDPTesterConsole
         ];
 
         static UdpNode Server = null!;
+        static IEncoder Encoder = null!;
 
         static async Task Main()
         {
-            IEncoder encoder = new Encoder(Encoding.UTF8);
+            Encoder = new Encoder(Encoding.UTF8);
 
-            Server = new(encoder);
+            Server = new(Encoder);
             Server.MessageReceived += Server_MessageReceived;
 
             _ = Task.Run(ColorChanger);
@@ -46,29 +47,32 @@ namespace UDPTesterConsole
 
                 if (await Server.BroadcastMessage(color))
                     count++;
+
+                await Task.Delay(1);
             }
         }
 
-        private static void Server_MessageReceived(IPEndPoint sender, string dataJson)
+        private static void Server_MessageReceived(IPEndPoint sender, byte[] data)
         {
             try
             {
+                string dataJson = Encoder.BytesToString(data);
                 Package pkg = Package.Deserialize(dataJson);
                 Command command = pkg.Command;
-                string data = pkg.Data;
+                string dataStr = pkg.Data;
 
                 switch (command)
                 {
                     case Command.CONNECT:
-                        int port = int.Parse(data);
+                        int port = int.Parse(dataStr);
                         Client client = new(sender.Address, port);
                         Server.AddClient(client);
                         Console.WriteLine($"Client connected: {sender.Address}:{port}");
                         break;
 
                     case Command.DISCONNECT:
-                        Server.RemoveClient(new(sender.Address, int.Parse(data)));
-                        Console.WriteLine($"Client disconnected: {sender.Address}:{data}");
+                        Server.RemoveClient(new(sender.Address, int.Parse(dataStr)));
+                        Console.WriteLine($"Client disconnected: {sender.Address}:{dataStr}");
                         break;
                 }
 

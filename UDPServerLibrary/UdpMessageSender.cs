@@ -6,8 +6,8 @@ namespace UDPServerLibrary
 {
     public class UdpMessageSender : IMessageSender, IDisposable
     {
-        private UdpClient Client;
-        private readonly IEncoder Encoder;
+        public IEncoder Encoder { get; }
+        private readonly UdpClient Client;
 
         public UdpMessageSender(IEncoder encoder)
         {
@@ -15,12 +15,16 @@ namespace UDPServerLibrary
             Client = new UdpClient();
         }
 
-        public async Task SendMessage(IPEndPoint destination, string message)
-        {
-            ReadOnlyMemory<byte> data = Encoder.StringToBytes(message);
-            await Client.SendAsync(data, destination);
-        }
+        public async Task SendMessage(IPEndPoint destination, string message, CancellationToken token = default)
+            => await SendMessage(destination, Encoder.StringToBytes(message), token);
 
-        public void Dispose() => Client?.Dispose();
+        public async Task SendMessage(IPEndPoint destination, ReadOnlyMemory<byte> data, CancellationToken token = default)
+            => await Client.SendAsync(data, destination, cancellationToken: token);
+
+        public void Dispose()
+        {
+            Client?.Dispose();
+            GC.SuppressFinalize(this);
+        }
     }
 }
